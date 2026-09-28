@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ALUNO
+  PROFESSOR
+  SECRETARIA
+  ADMIN
+}
+
+enum ConversationType {
+  PROFESSOR
+  SECRETARIA
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  passwordHash String
+  role         Role
+  course       String?
+  semester     Int?
+  createdAt    DateTime      @default(now())
+  messages     Message[]
+  conversations ConversationParticipant[]
+  announcements Announcement[]
+}
+
+model Conversation {
+  id           Int           @id @default(autoincrement())
+  type         ConversationType
+  subject      String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  conversationId Int
+  userId         Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  content        String
+  createdAt      DateTime     @default(now())
+  conversationId Int
+  senderId       Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id])
+}
+
+model Announcement {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  audience    String   @default("TODOS")
+  createdAt   DateTime @default(now())
+  authorId    Int
+  author      User     @relation(fields: [authorId], references: [id])
+}
